@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e9e52">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Timer treningowy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: jeden ekran; ustawienia jako karta, w trakcie treningu całe tło w kolorze fazy */
+:root{
+  --bg:#eef1ee; --surface:#ffffff; --fg:#17201b; --muted:#5d6b63; --line:#d6ddd8; --accent:#1f9d55;
+  --ex1:#1e9e52; --ex2:#2160d8; --rest:#ee7a12; --setrest:#d3343a; --done:#17201b;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101512; --surface:#19201c; --fg:#e8eee9; --muted:#9aa8a0; --line:#2c3631; --accent:#3cc47a; --done:#0c100e; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101512; --surface:#19201c; --fg:#e8eee9; --muted:#9aa8a0; --line:#2c3631; --accent:#3cc47a; --done:#0c100e; color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  transition:background-color .35s ease}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid currentColor;outline-offset:2px}
+
+/* ---------- ustawienia ---------- */
+#setup{max-width:460px;margin:0 auto;padding-block:20px 28px;display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01em;margin:0;text-transform:uppercase}
+.sub{color:var(--muted);margin:2px 0 0;font-size:15px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:14px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.dot{width:14px;height:14px;border-radius:50%}
+.dot.split{background:linear-gradient(90deg,var(--ex1) 50%,var(--ex2) 50%)}
+.lbl{min-width:0}
+.lbl b{display:block;font-weight:600;font-size:16px}
+.lbl small{color:var(--muted);font-size:13px}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:22px;line-height:1;font-weight:500}
+.step button:active{transform:scale(.95)}
+.val{font-family:var(--display);font-weight:600;font-size:26px;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+.sum{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px;color:var(--muted);font-size:15px}
+.sum strong{font-family:var(--display);font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums}
+.big{border:0;border-radius:14px;background:var(--accent);color:#fff;font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.06em;text-transform:uppercase;padding:16px;width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* ---------- trening ---------- */
+#run{position:fixed;inset:0;display:flex;flex-direction:column;color:#fff;
+  padding:calc(18px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  background:var(--ex1);transition:background-color .35s ease}
+#run.p-ex1{background:var(--ex1)} #run.p-ex2{background:var(--ex2)}
+#run.p-rest,#run.p-prep{background:var(--rest)} #run.p-setrest{background:var(--setrest)} #run.p-done{background:var(--done)}
+.top{display:flex;justify-content:space-between;gap:12px;font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.04em;text-transform:uppercase;opacity:.92}
+.top span{font-variant-numeric:tabular-nums}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;min-height:0}
+#phase{font-family:var(--display);font-weight:700;font-size:clamp(26px,7vw,44px);letter-spacing:.08em;text-transform:uppercase}
+#time{font-family:var(--display);font-weight:700;font-size:clamp(110px,38vw,300px);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+#half{font-size:16px;opacity:.85;min-height:1.3em}
+.bar{height:8px;border-radius:8px;background:rgba(255,255,255,.25);overflow:hidden;margin-bottom:14px}
+.bar div{height:100%;width:0;background:#fff;border-radius:8px}
+#next{font-size:16px;opacity:.9;text-align:center;margin-bottom:16px;min-height:1.3em}
+.ctrl{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:10px;max-width:520px;width:100%;margin:0 auto}
+.ctrl button{border:2px solid rgba(255,255,255,.55);background:rgba(0,0,0,.12);border-radius:14px;padding:14px 8px;font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.05em;text-transform:uppercase;color:#fff}
+.ctrl button.main{background:#fff;color:#111;border-color:#fff}
+#run.paused .center{opacity:.55}
+@media (prefers-reduced-motion:reduce){body,#run{transition:none}}
+</style>
+
+<section id="setup">
+  <div>
+    <h1>Timer treningowy</h1>
+    <p class="sub">Ustaw czasy i liczbę ćwiczeń, potem start.</p>
+  </div>
+  <div class="card" id="rows"></div>
+  <div class="sum"><span>Łączny czas treningu</span><strong id="total">0:00</strong></div>
+  <button class="big" id="startBtn">Start</button>
+  <div class="legend">
+    <span><i style="background:var(--ex1)"></i>ćwiczenie, 1. połowa</span>
+    <span><i style="background:var(--ex2)"></i>ćwiczenie, 2. połowa</span>
+    <span><i style="background:var(--rest)"></i>przerwa między ćwiczeniami</span>
+    <span><i style="background:var(--setrest)"></i>przerwa między seriami</span>
+  </div>
+</section>
+
+<section id="run" hidden>
+  <div class="top"><span id="exInfo">Ćwiczenie 1/5</span><span id="setInfo">Seria 1/3</span></div>
+  <div class="center">
+    <div id="phase">Ćwiczenie</div>
+    <div id="time">0:30</div>
+    <div id="half"></div>
+  </div>
+  <div class="bar"><div id="prog"></div></div>
+  <div id="next"></div>
+  <div class="ctrl">
+    <button id="stopBtn">Stop</button>
+    <button id="pauseBtn" class="main">Pauza</button>
+    <button id="skipBtn">Pomiń</button>
+  </div>
+</section>
+
+<script>
+(function(){
+  const FIELDS=[
+    {k:'prep',name:'Przygotowanie do startu',   hint:'pomarańczowy, 5, 10 lub 15 s', dot:'var(--rest)', min:5, max:15, step:5, time:true},
+    {k:'ex',  name:'Czas ćwiczenia',            hint:'zielony, potem niebieski', dot:'split', min:5, max:3600, step:5, time:true},
+    {k:'rest',name:'Przerwa między ćwiczeniami',hint:'pomarańczowy',              dot:'var(--rest)', min:0, max:3600, step:5, time:true},
+    {k:'setr',name:'Przerwa między seriami',    hint:'czerwony',                  dot:'var(--setrest)', min:0, max:3600, step:15, time:true},
+    {k:'n',   name:'Ćwiczeń w serii',           hint:'',                          dot:'var(--line)', min:1, max:50, step:1},
+    {k:'sets',name:'Liczba serii',              hint:'',                          dot:'var(--line)', min:1, max:30, step:1}
+  ];
+  const DEF={prep:15,ex:40,rest:20,setr:90,n:5,sets:3};
+  let cfg={...DEF};
+  try{const s=JSON.parse(localStorage.getItem('timer-cfg')||'null'); if(s) for(const k in DEF) if(typeof s[k]==='number') cfg[k]=s[k];}catch(e){}
+  const save=()=>{try{localStorage.setItem('timer-cfg',JSON.stringify(cfg))}catch(e){}};
+
+  const $=id=>document.getElementById(id);
+  const fmt=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60),r=s%60;return m+':'+String(r).padStart(2,'0')};
+
+  // ----- ekran ustawień -----
+  const rows=$('rows');
+  FIELDS.forEach(f=>{
+    const r=document.createElement('div');r.className='row';
+    r.innerHTML=`<span class="dot ${f.dot==='split'?'split':''}" style="${f.dot!=='split'?'background:'+f.dot:''}"></span>
+      <div class="lbl"><b>${f.name}</b>${f.hint?`<small>${f.hint}</small>`:''}</div>
+      <div class="step"><button id="m-${f.k}" aria-label="${f.name}: mniej">−</button><span class="val" id="v-${f.k}"></span><button id="p-${f.k}" aria-label="${f.name}: więcej">+</button></div>`;
+    rows.appendChild(r);
+    const change=d=>{cfg[f.k]=Math.min(f.max,Math.max(f.min,cfg[f.k]+d*f.step));save();render()};
+    holdRepeat(r.querySelector('#m-'+f.k),()=>change(-1));
+    holdRepeat(r.querySelector('#p-'+f.k),()=>change(1));
+  });
+  function holdRepeat(btn,fn){
+    let t1,t2;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();fn();t1=setTimeout(()=>{t2=setInterval(fn,90)},420)});
+    ['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,stop));
+    btn.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn()}});
+  }
+  function render(){
+    FIELDS.forEach(f=>{$('v-'+f.k).textContent=f.time?fmt(cfg[f.k]):cfg[f.k]});
+    $('total').textContent=fmt(plan().reduce((a,p)=>a+p.dur,0));
+  }
+
+  // ----- plan treningu -----
+  function plan(){
+    const L=[{type:'prep',dur:cfg.prep,s:1,e:1}];
+    for(let s=1;s<=cfg.sets;s++){
+      for(let e=1;e<=cfg.n;e++){
+        L.push({type:'ex',dur:cfg.ex,s,e});
+        if(e<cfg.n && cfg.rest>0) L.push({type:'rest',dur:cfg.rest,s,e});
+      }
+      if(s<cfg.sets && cfg.setr>0) L.push({type:'setrest',dur:cfg.setr,s,e:cfg.n});
+    }
+    return L;
+  }
+
+  // ----- dźwięk -----
+  let ac=null;
+  function beep(freq,ms,vol=0.5){
+    if(!ac) return;
+    const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+    o.type='square';o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol*0.35,t+0.01);
+    g.gain.setValueAtTime(vol*0.35,t+ms/1000-0.03);g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000);
+    o.connect(g).connect(ac.destination);o.start(t);o.stop(t+ms/1000+0.02);
+  }
+  const sCount=()=>beep(880,140);          // ostatnie 3 sekundy
+  const sEnd=()=>beep(1320,320);           // koniec fazy
+  // połowa ćwiczenia – głos „Połowa” (gdy telefon nie ma syntezy mowy, zostaje dłuższy sygnał)
+  const tts=('speechSynthesis' in window)?window.speechSynthesis:null;
+  let plVoice=null;
+  function pickVoice(){try{const v=tts.getVoices();plVoice=v.find(x=>/^pl/i.test(x.lang))||null}catch(e){}}
+  if(tts){pickVoice();try{tts.addEventListener('voiceschanged',pickVoice)}catch(e){}}
+  function say(text){
+    if(!tts){beep(660,800);return}
+    try{tts.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='pl-PL';if(plVoice)u.voice=plVoice;u.rate=1.15;u.pitch=1.35;u.volume=1;tts.speak(u)}catch(e){beep(660,800)}
+  }
+  function primeTts(){if(!tts)return;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;tts.speak(u)}catch(e){}}
+  const sHalf=()=>say('Połowa!');
+
+  // ----- blokada wygaszania ekranu -----
+  let lock=null;
+  async function wake(){try{if('wakeLock' in navigator) lock=await navigator.wakeLock.request('screen')}catch(e){}}
+  function unwake(){try{lock&&lock.release()}catch(e){}lock=null}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&running&&!paused) wake()});
+
+  // ----- silnik -----
+  let L=[],i=0,end=0,left=0,running=false,paused=false,lastSec=null,halfDone=false,tick=null;
+  const runEl=$('run');
+  const NAMES={prep:'Przygotowanie',ex:'Ćwiczenie',rest:'Przerwa',setrest:'Przerwa między seriami'};
+
+  function startPhase(idx){
+    i=idx;
+    if(i>=L.length){finish();return}
+    const p=L[i];
+    end=performance.now()+p.dur*1000;lastSec=Math.ceil(p.dur);halfDone=false;
+    $('exInfo').textContent=`Ćwiczenie ${p.e}/${cfg.n}`;
+    $('setInfo').textContent=`Seria ${p.s}/${cfg.sets}`;
+    $('phase').textContent=NAMES[p.type];
+    const n=L[i+1];
+    $('next').textContent=n?('Dalej: '+(n.type==='ex'?`ćwiczenie ${n.e}/${cfg.n}`:NAMES[n.type].toLowerCase())+' · '+fmt(n.dur)):'Dalej: koniec treningu';
+    update();
+  }
+  function update(){
+    if(!running) return;
+    const p=L[i];
+    const rem=paused?left:Math.max(0,(end-performance.now())/1000);
+    const el=p.dur-rem;
+    const sec=Math.ceil(rem-1e-6);
+    let cls='p-'+p.type;
+    if(p.type==='ex') cls=el>=p.dur/2?'p-ex2':'p-ex1';
+    runEl.className=cls+(paused?' paused':'');
+    $('time').textContent=fmt(sec);
+    $('prog').style.width=(Math.min(1,el/p.dur)*100)+'%';
+    $('half').textContent=p.type==='ex'?(el>=p.dur/2?'druga połowa':'pierwsza połowa'):'';
+    if(paused) return;
+    if(p.type==='ex'&&!halfDone&&el>=p.dur/2-1){halfDone=true;if(rem>1.5)sHalf()}
+    if(sec!==lastSec){
+      if(sec>=1&&sec<=3&&sec<lastSec) sCount();
+      lastSec=sec;
+    }
+    if(rem<=0){sEnd();startPhase(i+1)}
+  }
+  function finish(){
+    running=false;clearInterval(tick);unwake();
+    runEl.className='p-done';
+    $('phase').textContent='Koniec treningu';
+    $('time').textContent=fmt(L.reduce((a,p)=>a+p.dur,0));
+    $('half').textContent='łączny czas';
+    $('prog').style.width='100%';
+    $('next').textContent='';
+    $('pauseBtn').textContent='Wróć';$('skipBtn').disabled=true;$('stopBtn').disabled=true;
+    beep(1320,250);setTimeout(()=>beep(1320,250),330);setTimeout(()=>beep(1760,600),660);
+  }
+  function start(){
+    try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
+    primeTts();
+    L=plan();running=true;paused=false;
+    $('setup').hidden=true;runEl.hidden=false;
+    $('pauseBtn').textContent='Pauza';$('skipBtn').disabled=false;$('stopBtn').disabled=false;
+    wake();startPhase(0);
+    clearInterval(tick);tick=setInterval(update,50);
+  }
+  function back(){running=false;clearInterval(tick);unwake();runEl.hidden=true;$('setup').hidden=false}
+
+  $('startBtn').addEventListener('click',start);
+  $('pauseBtn').addEventListener('click',()=>{
+    if(!running){back();return}
+    if(!paused){left=Math.max(0,(end-performance.now())/1000);paused=true;$('pauseBtn').textContent='Wznów';unwake()}
+    else{end=performance.now()+left*1000;paused=false;$('pauseBtn').textContent='Pauza';wake();try{ac&&ac.resume()}catch(e){}}
+    update();
+  });
+  $('skipBtn').addEventListener('click',()=>{if(running){paused=false;$('pauseBtn').textContent='Pauza';startPhase(i+1)}});
+  let stopArm=0;
+  $('stopBtn').addEventListener('click',()=>{
+    if(Date.now()-stopArm<2500){back();$('stopBtn').textContent='Stop';return}
+    stopArm=Date.now();$('stopBtn').textContent='Na pewno?';
+    setTimeout(()=>{$('stopBtn').textContent='Stop'},2500);
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
