@@ -113,13 +113,14 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 <script>
 (function(){
   const FIELDS=[
+    {k:'prep',name:'Przygotowanie do startu',   hint:'pomarańczowy, 5, 10 lub 15 s', dot:'var(--rest)', min:5, max:15, step:5, time:true},
     {k:'ex',  name:'Czas ćwiczenia',            hint:'zielony, potem niebieski', dot:'split', min:5, max:3600, step:5, time:true},
     {k:'rest',name:'Przerwa między ćwiczeniami',hint:'pomarańczowy',              dot:'var(--rest)', min:0, max:3600, step:5, time:true},
     {k:'setr',name:'Przerwa między seriami',    hint:'czerwony',                  dot:'var(--setrest)', min:0, max:3600, step:15, time:true},
     {k:'n',   name:'Ćwiczeń w serii',           hint:'',                          dot:'var(--line)', min:1, max:50, step:1},
     {k:'sets',name:'Liczba serii',              hint:'',                          dot:'var(--line)', min:1, max:30, step:1}
   ];
-  const DEF={ex:40,rest:20,setr:90,n:5,sets:3};
+  const DEF={prep:15,ex:40,rest:20,setr:90,n:5,sets:3};
   let cfg={...DEF};
   try{const s=JSON.parse(localStorage.getItem('timer-cfg')||'null'); if(s) for(const k in DEF) if(typeof s[k]==='number') cfg[k]=s[k];}catch(e){}
   const save=()=>{try{localStorage.setItem('timer-cfg',JSON.stringify(cfg))}catch(e){}};
@@ -152,7 +153,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 
   // ----- plan treningu -----
   function plan(){
-    const L=[{type:'prep',dur:15,s:1,e:1}];
+    const L=[{type:'prep',dur:cfg.prep,s:1,e:1}];
     for(let s=1;s<=cfg.sets;s++){
       for(let e=1;e<=cfg.n;e++){
         L.push({type:'ex',dur:cfg.ex,s,e});
