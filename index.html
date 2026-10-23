@@ -53,7 +53,22 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 .step{display:flex;align-items:center;gap:6px}
 .step button{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:22px;line-height:1;font-weight:500}
 .step button:active{transform:scale(.95)}
-.val{font-family:var(--display);font-weight:600;font-size:26px;min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+.val{font-family:var(--display);font-weight:600;font-size:26px;width:76px;text-align:center;font-variant-numeric:tabular-nums;
+  color:var(--fg);background:transparent;border:1px solid transparent;border-bottom-color:var(--line);border-radius:8px;padding:2px 0}
+.val:focus{outline:none;border-color:var(--accent);background:var(--bg)}
+.sec{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 -10px 4px}
+
+/* ---------- zapisane treningi ---------- */
+.pr{display:grid;grid-template-columns:1fr auto;align-items:center;border-top:1px solid var(--line)}
+.pr:first-child{border-top:0}
+.pr.on{background:var(--bg);box-shadow:inset 4px 0 var(--accent)}
+.pr-load{border:0;background:none;text-align:left;padding:12px 14px;min-width:0}
+.pr-load b{display:block;font-weight:600;font-size:16px}
+.pr-load small{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.pr-del{border:0;background:none;color:var(--muted);padding:12px 16px;font-size:15px;white-space:nowrap}
+.pr-save{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.pr-save input{flex:1;min-width:0;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+.pr-save button{border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:600;padding:10px 16px}
 .sum{display:flex;justify-content:space-between;align-items:baseline;padding:0 4px;color:var(--muted);font-size:15px}
 .sum strong{font-family:var(--display);font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums}
 .big{border:0;border-radius:14px;background:var(--accent);color:#fff;font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.06em;text-transform:uppercase;padding:16px;width:100%}
@@ -67,8 +82,10 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
   background:var(--ex1);transition:background-color .35s ease}
 #run.p-ex1{background:var(--ex1)} #run.p-ex2{background:var(--ex2)}
 #run.p-rest,#run.p-prep{background:var(--rest)} #run.p-setrest{background:var(--setrest)} #run.p-done{background:var(--done)}
-.top{display:flex;justify-content:space-between;gap:12px;font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:.04em;text-transform:uppercase;opacity:.92}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 12px;font-family:var(--display);font-weight:700;font-size:clamp(28px,8vw,54px);line-height:1.05;letter-spacing:.03em;text-transform:uppercase}
 .top span{font-variant-numeric:tabular-nums}
+.remain{display:flex;justify-content:center;align-items:baseline;gap:10px;margin-top:10px;font-family:var(--display);font-weight:600;font-size:clamp(22px,6.5vw,36px);letter-spacing:.05em;text-transform:uppercase;opacity:.92}
+.remain b{font-weight:700;font-size:1.3em;font-variant-numeric:tabular-nums}
 .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;min-height:0}
 #phase{font-family:var(--display);font-weight:700;font-size:clamp(26px,7vw,44px);letter-spacing:.08em;text-transform:uppercase}
 #time{font-family:var(--display);font-weight:700;font-size:clamp(110px,38vw,300px);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -86,8 +103,17 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 <section id="setup">
   <div>
     <h1>Timer treningowy</h1>
-    <p class="sub">Ustaw czasy i liczbę ćwiczeń, potem start.</p>
+    <p class="sub">Wybierz zapisany trening albo ustaw własny. Stuknij w liczbę, żeby wpisać dowolną wartość.</p>
   </div>
+  <h2 class="sec">Moje treningi</h2>
+  <div class="card">
+    <div id="presets"></div>
+    <form class="pr-save" id="saveForm">
+      <input id="prName" placeholder="Nazwa, np. Tabata" maxlength="40" enterkeyhint="done" aria-label="Nazwa treningu">
+      <button id="prSave">Zapisz</button>
+    </form>
+  </div>
+  <h2 class="sec">Ustawienia</h2>
   <div class="card" id="rows"></div>
   <div class="sum"><span>Łączny czas treningu</span><strong id="total">0:00</strong></div>
   <button class="big" id="startBtn">Start</button>
@@ -101,6 +127,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 
 <section id="run" hidden>
   <div class="top"><span id="exInfo">Ćwiczenie 1/5</span><span id="setInfo">Seria 1/3</span></div>
+  <div class="remain" id="remainRow"><span>Do końca</span><b id="remain">0:00</b></div>
   <div class="center">
     <div id="phase">Ćwiczenie</div>
     <div id="time">0:30</div>
@@ -118,7 +145,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 <script>
 (function(){
   const FIELDS=[
-    {k:'prep',name:'Przygotowanie do startu',   hint:'pomarańczowy, 5, 10 lub 15 s', dot:'var(--rest)', min:5, max:15, step:5, time:true},
+    {k:'prep',name:'Przygotowanie do startu',   hint:'pomarańczowy',              dot:'var(--rest)', min:5, max:60, step:5, time:true},
     {k:'ex',  name:'Czas ćwiczenia',            hint:'zielony, potem niebieski', dot:'split', min:5, max:3600, step:5, time:true},
     {k:'rest',name:'Przerwa między ćwiczeniami',hint:'pomarańczowy',              dot:'var(--rest)', min:0, max:3600, step:5, time:true},
     {k:'setr',name:'Przerwa między seriami',    hint:'czerwony',                  dot:'var(--setrest)', min:0, max:3600, step:15, time:true},
@@ -133,17 +160,80 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
   const $=id=>document.getElementById(id);
   const fmt=s=>{s=Math.max(0,Math.round(s));const m=Math.floor(s/60),r=s%60;return m+':'+String(r).padStart(2,'0')};
 
+  // ----- zapisane treningi -----
+  const clean=c=>{const o={...DEF};if(c) for(const k in DEF) if(typeof c[k]==='number') o[k]=c[k];return o};
+  let presets=null,current='';
+  try{presets=JSON.parse(localStorage.getItem('timer-presets')||'null');current=localStorage.getItem('timer-current')||''}catch(e){}
+  if(!Array.isArray(presets)) presets=[
+    {name:'Funkcjonalny',cfg:{...cfg}},
+    {name:'Tabata',      cfg:{prep:10,ex:20,rest:10,setr:60,n:8,sets:1}},
+    {name:'Brzuchy',     cfg:{prep:10,ex:30,rest:15,setr:60,n:6,sets:3}}
+  ];
+  presets=presets.filter(p=>p&&typeof p.name==='string').map(p=>({name:p.name,cfg:clean(p.cfg)}));
+  const savePresets=()=>{try{localStorage.setItem('timer-presets',JSON.stringify(presets));localStorage.setItem('timer-current',current)}catch(e){}};
+  const same=(a,b)=>Object.keys(DEF).every(k=>a[k]===b[k]);
+  const serie=n=>n===1?'seria':(n%10>=2&&n%10<=4&&(n%100<12||n%100>14))?'serie':'serii';
+  const findPreset=name=>presets.findIndex(p=>p.name.toLowerCase()===name.trim().toLowerCase());
+  const prName=$('prName');
+  prName.value=current;
+
+  function renderPresets(){
+    const box=$('presets');box.textContent='';
+    presets.forEach((p,idx)=>{
+      const c=p.cfg,r=document.createElement('div');
+      r.className='pr'+(same(c,cfg)?' on':'');
+      const load=document.createElement('button');load.className='pr-load';
+      const b=document.createElement('b');b.textContent=p.name;
+      const sm=document.createElement('small');
+      sm.textContent=`${c.n} × ${fmt(c.ex)} / ${fmt(c.rest)} · ${c.sets} ${serie(c.sets)} · ${fmt(totalOf(c))}`;
+      load.append(b,sm);
+      load.addEventListener('click',()=>{cfg={...c};current=p.name;prName.value=p.name;save();savePresets();render()});
+      const del=document.createElement('button');del.className='pr-del';del.textContent='✕';del.setAttribute('aria-label','Usuń '+p.name);
+      let armed=0;
+      del.addEventListener('click',()=>{
+        if(Date.now()-armed<2500){presets.splice(idx,1);savePresets();render();return}
+        armed=Date.now();del.textContent='Usuń?';
+        setTimeout(()=>{del.textContent='✕'},2500);
+      });
+      r.append(load,del);box.appendChild(r);
+    });
+    $('prSave').textContent=prName.value.trim()&&findPreset(prName.value)>=0?'Zaktualizuj':'Zapisz';
+  }
+  prName.addEventListener('input',renderPresets);
+  $('saveForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const name=prName.value.trim();
+    if(!name){prName.focus();return}
+    const idx=findPreset(name);
+    if(idx>=0) presets[idx].cfg={...cfg}; else presets.push({name,cfg:{...cfg}});
+    current=name;prName.blur();savePresets();render();
+  });
+
   // ----- ekran ustawień -----
+  // ręczny wpis: „22” = 22 s, „130” = 1:30, „1:30” też działa
+  function parseVal(str,f){
+    str=str.trim();
+    if(!f.time) return parseInt(str.replace(/\D/g,''),10);
+    if(/[:.,]/.test(str)){const [m,s]=str.split(/[:.,]/);return (parseInt(m,10)||0)*60+(parseInt(s,10)||0)}
+    const d=str.replace(/\D/g,'');
+    if(!d) return NaN;
+    return d.length<=2?+d:(+d.slice(0,-2))*60+(+d.slice(-2));
+  }
   const rows=$('rows');
   FIELDS.forEach(f=>{
     const r=document.createElement('div');r.className='row';
     r.innerHTML=`<span class="dot ${f.dot==='split'?'split':''}" style="${f.dot!=='split'?'background:'+f.dot:''}"></span>
       <div class="lbl"><b>${f.name}</b>${f.hint?`<small>${f.hint}</small>`:''}</div>
-      <div class="step"><button id="m-${f.k}" aria-label="${f.name}: mniej">−</button><span class="val" id="v-${f.k}"></span><button id="p-${f.k}" aria-label="${f.name}: więcej">+</button></div>`;
+      <div class="step"><button id="m-${f.k}" aria-label="${f.name}: mniej">−</button><input class="val" id="v-${f.k}" inputmode="numeric" enterkeyhint="done" autocomplete="off" aria-label="${f.name}"><button id="p-${f.k}" aria-label="${f.name}: więcej">+</button></div>`;
     rows.appendChild(r);
-    const change=d=>{cfg[f.k]=Math.min(f.max,Math.max(f.min,cfg[f.k]+d*f.step));save();render()};
+    const inp=r.querySelector('#v-'+f.k);
+    const set=v=>{cfg[f.k]=Math.min(f.max,Math.max(f.min,Math.round(v)));save();render()};
+    const change=d=>{if(document.activeElement===inp) inp.blur();set(cfg[f.k]+d*f.step)};
     holdRepeat(r.querySelector('#m-'+f.k),()=>change(-1));
     holdRepeat(r.querySelector('#p-'+f.k),()=>change(1));
+    inp.addEventListener('focus',()=>inp.select());
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur()}});
+    inp.addEventListener('blur',()=>{const v=parseVal(inp.value,f);if(isNaN(v)) render(); else set(v)});
   });
   function holdRepeat(btn,fn){
     let t1,t2;const stop=()=>{clearTimeout(t1);clearInterval(t2)};
@@ -152,22 +242,26 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     btn.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn()}});
   }
   function render(){
-    FIELDS.forEach(f=>{$('v-'+f.k).textContent=f.time?fmt(cfg[f.k]):cfg[f.k]});
-    $('total').textContent=fmt(plan().reduce((a,p)=>a+p.dur,0));
+    FIELDS.forEach(f=>{const inp=$('v-'+f.k);if(document.activeElement!==inp) inp.value=f.time?fmt(cfg[f.k]):cfg[f.k]});
+    $('total').textContent=fmt(totalOf(cfg));
+    renderPresets();
   }
 
   // ----- plan treningu -----
-  function plan(){
-    const L=[{type:'prep',dur:cfg.prep,s:1,e:1}];
-    for(let s=1;s<=cfg.sets;s++){
-      for(let e=1;e<=cfg.n;e++){
-        L.push({type:'ex',dur:cfg.ex,s,e});
-        if(e<cfg.n && cfg.rest>0) L.push({type:'rest',dur:cfg.rest,s,e});
+  function plan(c=cfg){
+    const L=[{type:'prep',dur:c.prep,s:1,e:1}];
+    for(let s=1;s<=c.sets;s++){
+      for(let e=1;e<=c.n;e++){
+        L.push({type:'ex',dur:c.ex,s,e});
+        if(e<c.n && c.rest>0) L.push({type:'rest',dur:c.rest,s,e});
       }
-      if(s<cfg.sets && cfg.setr>0) L.push({type:'setrest',dur:cfg.setr,s,e:cfg.n});
+      if(s<c.sets && c.setr>0) L.push({type:'setrest',dur:c.setr,s,e:c.n});
     }
+    // ile zostaje po każdej fazie – do zegara „do końca”
+    let acc=0;for(let k=L.length-1;k>=0;k--){L[k].after=acc;acc+=L[k].dur}
     return L;
   }
+  function totalOf(c){return plan(c).reduce((a,p)=>a+p.dur,0)}
 
   // ----- dźwięk -----
   let ac=null;
@@ -226,6 +320,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     if(p.type==='ex') cls=el>=p.dur/2?'p-ex2':'p-ex1';
     runEl.className=cls+(paused?' paused':'');
     $('time').textContent=fmt(sec);
+    $('remain').textContent=fmt(sec+p.after);
     $('prog').style.width=(Math.min(1,el/p.dur)*100)+'%';
     $('half').textContent=p.type==='ex'?(el>=p.dur/2?'druga połowa':'pierwsza połowa'):'';
     if(paused) return;
@@ -238,7 +333,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
   }
   function finish(){
     running=false;clearInterval(tick);unwake();
-    runEl.className='p-done';
+    runEl.className='p-done';$('remainRow').hidden=true;
     $('phase').textContent='Koniec treningu';
     $('time').textContent=fmt(L.reduce((a,p)=>a+p.dur,0));
     $('half').textContent='łączny czas';
@@ -251,7 +346,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
     primeTts();
     L=plan();running=true;paused=false;
-    $('setup').hidden=true;runEl.hidden=false;
+    $('setup').hidden=true;runEl.hidden=false;$('remainRow').hidden=false;
     $('pauseBtn').textContent='Pauza';$('skipBtn').disabled=false;$('stopBtn').disabled=false;
     wake();startPhase(0);
     clearInterval(tick);tick=setInterval(update,50);
