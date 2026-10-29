@@ -1,6 +1,6 @@
 // Service worker: aplikacja działa offline.
 // Po każdej zmianie w plikach podbij numer wersji, żeby telefony pobrały nową wersję.
-const CACHE = 'timer-v2';
+const CACHE = 'timer-v4';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

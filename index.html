@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>/* motyw przed wyrenderowaniem: domyślnie jasny */try{var t=localStorage.getItem('timer-theme')||'light';if(t!=='auto')document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme='light'}</script>
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -75,6 +76,10 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
 .legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.theme{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 4px;color:var(--muted);font-size:15px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:8px 14px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
 
 /* ---------- trening ---------- */
 #run{position:fixed;inset:0;display:flex;flex-direction:column;color:#fff;
@@ -122,6 +127,11 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     <span><i style="background:var(--ex2)"></i>ćwiczenie, 2. połowa</span>
     <span><i style="background:var(--rest)"></i>przerwa między ćwiczeniami</span>
     <span><i style="background:var(--setrest)"></i>przerwa między seriami</span>
+  </div>
+  <div class="theme"><span>Tło</span>
+    <div class="seg" id="themeSeg" role="group" aria-label="Tło">
+      <button data-t="light">Jasne</button><button data-t="dark">Ciemne</button><button data-t="auto">Jak w telefonie</button>
+    </div>
   </div>
 </section>
 
@@ -285,7 +295,39 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     try{tts.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='pl-PL';if(plVoice)u.voice=plVoice;u.rate=1.15;u.pitch=1.35;u.volume=1;tts.speak(u)}catch(e){beep(660,800)}
   }
   function primeTts(){if(!tts)return;try{const u=new SpeechSynthesisUtterance(' ');u.volume=0;tts.speak(u)}catch(e){}}
-  const sHalf=()=>say('Połowa!');
+  // tony z wspólnym kompresorem (gwizdek przed połową, fanfara na koniec)
+  let master=null;
+  function out(){
+    if(!master){const c=ac.createDynamicsCompressor();c.threshold.value=-10;c.ratio.value=6;master=ac.createGain();master.gain.value=0.9;master.connect(c).connect(ac.destination)}
+    return master;
+  }
+  function tone(f,t,dur,o={}){
+    const osc=ac.createOscillator(),g=ac.createGain(),vol=o.vol??0.3;
+    osc.type=o.type||'square';osc.frequency.setValueAtTime(f,t);
+    if(o.vib){const l=ac.createOscillator(),lg=ac.createGain();l.frequency.value=5.5;lg.gain.value=f*0.006;l.connect(lg).connect(osc.frequency);l.start(t);l.stop(t+dur+.1)}
+    let node=osc;
+    if(o.lp){const fl=ac.createBiquadFilter();fl.type='lowpass';fl.frequency.value=o.lp;fl.Q.value=1;osc.connect(fl);node=fl}
+    const a=o.attack??0.008,r=o.release??0.04;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+a);
+    g.gain.setValueAtTime(vol,t+Math.max(a,dur-r));g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    node.connect(g).connect(out());osc.start(t);osc.stop(t+dur+0.05);
+  }
+  const chord=(fs,t,dur,o)=>fs.forEach(f=>tone(f,t,dur,{...o,vol:(o.vol??0.3)/Math.sqrt(fs.length)}));
+  const brass={type:'sawtooth',lp:2400,attack:0.03,release:0.25};
+  // połowa: szybki potrójny gwizdek 1,5 s przed połową, potem głos „Połowa!”
+  function sHalf(){
+    if(!ac) return;
+    const t=ac.currentTime+0.02;
+    [0,.18,.36].forEach(d=>tone(1500,t+d,.11,{vol:.35}));
+    setTimeout(()=>{if(running&&!paused)say('Połowa!')},1100);
+  }
+  // koniec treningu: fanfara „Ta-da”
+  function sFinish(){
+    if(!ac) return;
+    const t=ac.currentTime+0.02;
+    chord([392,494,587],t,.14,{...brass,vol:.45,release:.05});
+    chord([523,659,784,1047],t+.24,1.3,{...brass,vol:.5,vib:true});
+  }
 
   // ----- blokada wygaszania ekranu -----
   let lock=null;
@@ -324,7 +366,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     $('prog').style.width=(Math.min(1,el/p.dur)*100)+'%';
     $('half').textContent=p.type==='ex'?(el>=p.dur/2?'druga połowa':'pierwsza połowa'):'';
     if(paused) return;
-    if(p.type==='ex'&&!halfDone&&el>=p.dur/2-1){halfDone=true;if(rem>1.5)sHalf()}
+    if(p.type==='ex'&&!halfDone&&el>=p.dur/2-1.5){halfDone=true;if(rem>2)sHalf()}
     if(sec!==lastSec){
       if(sec>=1&&sec<=3&&sec<lastSec) sCount();
       lastSec=sec;
@@ -340,7 +382,7 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     $('prog').style.width='100%';
     $('next').textContent='';
     $('pauseBtn').textContent='Wróć';$('skipBtn').disabled=true;$('stopBtn').disabled=true;
-    beep(1320,250);setTimeout(()=>beep(1320,250),330);setTimeout(()=>beep(1760,600),660);
+    sFinish();
   }
   function start(){
     try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}
@@ -367,6 +409,15 @@ h1{font-family:var(--display);font-weight:700;font-size:34px;letter-spacing:.01e
     stopArm=Date.now();$('stopBtn').textContent='Na pewno?';
     setTimeout(()=>{$('stopBtn').textContent='Stop'},2500);
   });
+
+  // ----- tło: jasne / ciemne / jak w telefonie -----
+  function setTheme(t){
+    if(t==='auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme=t;
+    try{localStorage.setItem('timer-theme',t)}catch(e){}
+    document.querySelectorAll('#themeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===t));
+  }
+  document.querySelectorAll('#themeSeg button').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.t)));
+  setTheme(document.documentElement.dataset.theme||'auto');
 
   render();
 })();
